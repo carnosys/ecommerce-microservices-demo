@@ -1,0 +1,89 @@
+version: "3.9"
+
+services:
+  gateway:
+    build:
+      context: .
+      dockerfile: gateway/Dockerfile
+    ports:
+      - "5000:5000"
+    depends_on:
+      - auth_service
+      - user_service
+      - product_service
+      - order_service
+      - payment_service
+      - notification_service
+    restart: unless-stopped
+
+  auth_service:
+    build:
+      context: .
+      dockerfile: auth_service/Dockerfile
+    restart: unless-stopped
+
+  notification_service:
+    build:
+      context: .
+      dockerfile: notification_service/Dockerfile
+    depends_on:
+      - redis_cache
+    restart: unless-stopped
+
+  order_service:
+    build:
+      context: .
+      dockerfile: order_service/Dockerfile
+    depends_on:
+      - db_orders
+    restart: unless-stopped
+
+  payment_service:
+    build:
+      context: .
+      dockerfile: payment_service/Dockerfile
+    restart: unless-stopped
+
+  product_service:
+    build:
+      context: .
+      dockerfile: product_service/Dockerfile
+    restart: unless-stopped
+
+  user_service:
+    build:
+      context: .
+      dockerfile: user_service/Dockerfile
+    depends_on:
+      - db_users
+    restart: unless-stopped
+
+  db_orders:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: orders_db
+    volumes:
+      - db_orders_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  db_users:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: users_db
+    volumes:
+      - db_users_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  redis_cache:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+
+volumes:
+  db_users_data:
+  db_orders_data:
